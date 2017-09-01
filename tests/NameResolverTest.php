@@ -322,7 +322,7 @@ class NameResolverTest extends BaseTestCase
         for($i = 1; $i <= 100; $i++ ) {
             $dupes[] = 'newname(' . $i . ')';
         }
-        
+
         $dupes[] = 'newname';
 
         $dupes[] = 'newname(100)(1)';
@@ -340,7 +340,34 @@ class NameResolverTest extends BaseTestCase
 
         $resolvedName = $nameResolver->resolve($newName);
 
-        $this->assertEquals($resolvedName, "newname(100)(1)");
+        $this->assertEquals($resolvedName, "newname(100)(5)");
+    }
+
+    public function testResolvingOneHundredDuplicatesWithTwoPrefixes()
+    {
+        $dups = [];
+
+        for($i = 1; $i <= 100; $i++ ) {
+            $dupes[] = 'newname(' . $i . ')';
+        }
+        
+        $dupes[] = 'newname';
+        
+        for($i = 1; $i <= 100; $i++ ) {
+            $dupes[] = 'newname(100)(' . $i . ')';
+        }
+
+        $newName = "newname";
+
+        $source = $this->getSequentialDataSource();
+
+        $source->setTestData($dupes);
+
+        $nameResolver = new NameResolver($source);
+
+        $resolvedName = $nameResolver->resolve($newName);
+
+        $this->assertEquals($resolvedName, "newname(100)(100)(1)");
     }
 
     protected function getSequentialDataSource()
