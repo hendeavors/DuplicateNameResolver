@@ -18,14 +18,16 @@ class NameResolver
      */
     public function resolve($name)
     {
-        if( $this->originalExists($name) ) {
-            return $this->createNewName($name);
+        $dataSourceElements = $this->dataSource->all();
+
+        if( $this->originalExists($name, $dataSourceElements) ) {
+            return $this->createNewName($name, $dataSourceElements);
         }
 
         return $name;
     }
 
-    protected function createNewName($name)
+    protected function createNewName($name, $dataSourceElements)
     {
         $resolvedName = $name;
 
@@ -33,33 +35,33 @@ class NameResolver
             $resolvedName = $name . $this->firstNameSuffix($name);
         }
 
-        foreach($this->dataSource->all() as $existingName) {
-            $resolvedName = $this->makeResolvedName($resolvedName, $existingName);
+        foreach($dataSourceElements as $existingName) {
+            $resolvedName = $this->makeResolvedName($resolvedName, $existingName, $dataSourceElements);
         }
 
         return $resolvedName;
     }
 
-    protected function makeResolvedName($new, $old)
+    protected function makeResolvedName($new, $old, $dataSourceElements)
     {
         $oldName = $old;
 
         if( ! $this->dataSource->isSequential() ) {
-            $oldName = $old[$this->dataSource->nameIndex()];
+            $oldName = $old[$this->dataSource->key()];
         }
 
-        if( $new === $oldName ) {
+        if( in_array($new, $dataSourceElements) ) {
             $new = $this->appendOrReplaceSuffix($new, $old);
         }
 
         return $new;
     }
 
-    protected function originalExists($originalName)
+    protected function originalExists($originalName, $dataSourceElements)
     {
         $exists = false;
 
-        foreach($this->dataSource->all() as $existingName) {
+        foreach($dataSourceElements as $existingName) {
 
             if( $exists ) {
                 return $exists;
@@ -86,7 +88,7 @@ class NameResolver
         $name = $new . $this->getNameSuffix($old);
         
         if( $this->suffixExists($new) ) {
-            $name = mb_substr($new,0, strlen($new)-3) . $this->getNameSuffix($old);
+            $name = mb_substr($new,0, $this->getPositionOfOpeningSuffix($new)) . $this->getNameSuffix($old);
         }
 
         return $name;
@@ -97,7 +99,7 @@ class NameResolver
         $incrementer = 1;
         
         if( $increment ) {
-            $incrementer = (int)mb_substr($str,strlen($str)-2, strlen($str)) + 1;
+            $incrementer = (int)mb_substr($str, $this->getPositionAfterOpeningSuffix($str), strlen($str)) + 1;
         }
 
         return '(' . $incrementer . ')';
@@ -105,12 +107,33 @@ class NameResolver
 
     private function suffixExists($str)
     {
-        $lastThreeCharacters = mb_substr($str,strlen($str)-3, strlen($str));
+        $openPosition = $this->getPositionOfOpeningSuffix($str);
+        
+        $lastThreeCharacters = mb_substr($str, $openPosition, strlen($str));
 
-        if( isset($lastThreeCharacters[0]) && isset($lastThreeCharacters[2]) && $lastThreeCharacters[0] === '(' && $lastThreeCharacters[2] === ')' ) {
+        $lastSubstrPosition = strlen($lastThreeCharacters) - 1;
+
+        if( isset($lastThreeCharacters[0]) && isset($lastThreeCharacters[$lastSubstrPosition]) 
+            && $lastThreeCharacters[0] === '(' && $lastThreeCharacters[$lastSubstrPosition] === ')' 
+        ) {
             return true;
         }
 
         return false;
+    }
+
+    private function getPositionAfterOpeningSuffix($str)
+    {
+        $pos = strlen($str)-2;
+
+        if( isset($str[strlen($str)-3]) && is_numeric($str[strlen($str)-3]) )
+            $pos = strlen($str)-3;
+
+        return $pos;
+    }
+
+    private function getPositionOfOpeningSuffix($str)
+    {
+        return $this->getPositionAfterOpeningSuffix($str) - 1;
     }
 }

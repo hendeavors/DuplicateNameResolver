@@ -22,5 +22,5 @@ interface INameDataSource
      * A sequential array
      * @return null|string
      */
-    public function nameIndex();
+    public function key();
 }

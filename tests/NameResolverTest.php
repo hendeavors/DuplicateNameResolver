@@ -232,17 +232,26 @@ class NameResolverTest extends BaseTestCase
         $this->assertEquals($resolvedName, "stays(1)");
     }
 
-    public function testDictionaryDuplicateNameResolves()
+    public function testSuffixThatIsHigherThanThreeCharacaters()
     {
         $newName = "newname";
 
-        $source = $this->getDictionaryDataSource();
+        $source = $this->getSequentialDataSource();
 
         $source->setTestData([
             'newname',
             'newname 1',
             'randomename',
             'newname(1)',
+            'newname(2)',
+            'newname(3)',
+            'newname(4)',
+            'newname(5)',
+            'newname(6)',
+            'newname(7)',
+            'newname(8)',
+            'newname(9)',
+            'newname(10)',
             'test'
         ]);
 
@@ -250,7 +259,88 @@ class NameResolverTest extends BaseTestCase
 
         $resolvedName = $nameResolver->resolve($newName);
 
-        $this->assertNotEquals($resolvedName, $newName);
+        $this->assertEquals($resolvedName, "newname(11)");
+    }
+
+    public function testResolvingSuffixOutOfOrder()
+    {
+        $newName = "newname";
+
+        $source = $this->getSequentialDataSource();
+
+        $source->setTestData([
+            'newname', // newname(1)
+            'newname 1',
+            'randomename',
+            'newname(1)', // newname(2)
+            'newname(10)', // skips, aren't equal
+            'newname(2)',
+            'newname(3)',
+            'newname(4)',
+            'newname(5)',
+            'newname(6)',
+            'newname(7)',
+            'newname(8)',
+            'newname(9)',
+            'test'
+        ]);
+
+        $nameResolver = new NameResolver($source);
+
+        $resolvedName = $nameResolver->resolve($newName);
+
+        $this->assertEquals($resolvedName, "newname(11)");
+    }
+
+    public function testResolvingOneHundredDuplicates()
+    {
+        $dups = [];
+
+        for($i = 1; $i <= 100; $i++ ) {
+            $dupes[] = 'newname(' . $i . ')';
+        }
+        
+        $dupes[] = 'newname';
+
+        $newName = "newname";
+
+        $source = $this->getSequentialDataSource();
+
+        $source->setTestData($dupes);
+
+        $nameResolver = new NameResolver($source);
+
+        $resolvedName = $nameResolver->resolve($newName);
+
+        $this->assertEquals($resolvedName, "newname(100)(1)");
+    }
+
+    public function testResolvingOneHundredDuplicatesWithSecondPrefix()
+    {
+        $dups = [];
+
+        for($i = 1; $i <= 100; $i++ ) {
+            $dupes[] = 'newname(' . $i . ')';
+        }
+        
+        $dupes[] = 'newname';
+
+        $dupes[] = 'newname(100)(1)';
+        $dupes[] = 'newname(100)(2)';
+        $dupes[] = 'newname(100)(3)';
+        $dupes[] = 'newname(100)(4)';
+
+        $newName = "newname";
+
+        $source = $this->getSequentialDataSource();
+
+        $source->setTestData($dupes);
+
+        $nameResolver = new NameResolver($source);
+
+        $resolvedName = $nameResolver->resolve($newName);
+
+        $this->assertEquals($resolvedName, "newname(100)(1)");
     }
 
     protected function getSequentialDataSource()

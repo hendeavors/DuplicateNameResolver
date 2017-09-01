@@ -16,7 +16,7 @@ class SequentialDataSource implements INameDataSource {
         return true;
     }
 
-    public function nameIndex()
+    public function key()
     {
         return null;
     }
