@@ -1,0 +1,30 @@
+{
+    "name": "endeavors/duplicate-name-resolver",
+    "description": "",
+    "authors": [
+        {
+            "name": "adam",
+            "email": "adam@healthendeavors.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "illuminate/support": "4.1.*"
+    },
+    "require-dev": {
+        "phpseclib/phpseclib": ">=0.3.7",
+        "mockery/mockery": "~0.9",
+        "orchestra/testbench": "2.1.x"
+    },
+    "autoload": {
+        "psr-0": {
+            "Endeavors\\DuplicateNameResolver": "src/"
+        }
+    },
+    "autoload-dev": {
+	    "psr-4": {
+            "Endeavors\\DuplicateNameResolver\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable"
+}
