@@ -4,8 +4,13 @@ namespace Endeavors\DuplicateNameResolver;
 
 use Endeavors\DuplicateNameResolver\Contracts\INameDataSource;
 
+/**
+ * @todo refactor
+ */
 class NameResolver
 {
+    protected $suffixNumbers = [];
+
     public function __construct(INameDataSource $dataSource)
     {
         $this->dataSource = $dataSource;
@@ -99,7 +104,11 @@ class NameResolver
         $incrementer = 1;
         
         if( $increment ) {
-            $incrementer = (int)mb_substr($str, $this->getPositionAfterOpeningSuffix($str), strlen($str)) + 1;
+            $num = (int)mb_substr($str, $this->getPositionAfterOpeningSuffix($str), strlen($str));
+
+            $this->setSuffixNumbers($num);
+
+            $incrementer = $this->getNextIncrementer($num, $incrementer);
         }
 
         return '(' . $incrementer . ')';
@@ -109,12 +118,12 @@ class NameResolver
     {
         $openPosition = $this->getPositionOfOpeningSuffix($str);
         
-        $lastThreeCharacters = mb_substr($str, $openPosition, strlen($str));
+        $suffix = mb_substr($str, $openPosition, strlen($str));
 
-        $lastSubstrPosition = strlen($lastThreeCharacters) - 1;
+        $lastSubstrPosition = strlen($suffix) - 1;
 
-        if( isset($lastThreeCharacters[0]) && isset($lastThreeCharacters[$lastSubstrPosition]) 
-            && $lastThreeCharacters[0] === '(' && $lastThreeCharacters[$lastSubstrPosition] === ')' 
+        if( isset($suffix[0]) && isset($suffix[$lastSubstrPosition]) 
+            && $suffix[0] === '(' && $suffix[$lastSubstrPosition] === ')' 
         ) {
             return true;
         }
@@ -135,5 +144,58 @@ class NameResolver
     private function getPositionOfOpeningSuffix($str)
     {
         return $this->getPositionAfterOpeningSuffix($str) - 1;
+    }
+
+    private function setSuffixNumbers($suffixNumber)
+    {
+        $this->suffixNumbers[] = $suffixNumber;
+    }
+
+    private function getSuffixNumbers()
+    {
+        return $this->suffixNumbers;
+    }
+
+    private function getNextIncrementer($num, $incrementer)
+    {
+        if ($this->isDifferenceGreaterThanOne() ) {
+            $incrementer = $this->getPreviousSuffixNumber() + 1;
+        } else {
+            $incrementer = $num + 1;
+        }
+
+        return $incrementer;   
+    }
+
+    private function isDifferenceGreaterThanOne()
+    {
+        return $this->getDifferenceBetweenPreviousAndLastSuffixNumber() > 1;
+    }
+
+    private function getDifferenceBetweenPreviousAndLastSuffixNumber()
+    {
+        if( $this->getLastSuffixNumber() > $this->getPreviousSuffixNumber() ) {
+            return $this->getLastSuffixNumber() - $this->getPreviousSuffixNumber();
+        }
+
+        return 0;
+    }
+
+    private function getPreviousSuffixNumber()
+    {
+        if( count($this->suffixNumbers) > 1 ) {
+            return $this->suffixNumbers[count($this->suffixNumbers)-2];
+        }
+
+        return 0;
+    }
+
+    private function getLastSuffixNumber()
+    {
+        if( count($this->suffixNumbers) > 0 ) {
+            return $this->suffixNumbers[count($this->suffixNumbers)-1];
+        }
+
+        return 0;
     }
 }

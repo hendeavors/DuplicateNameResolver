@@ -27,8 +27,10 @@ class NameResolverTest extends BaseTestCase
         $this->assertEquals($resolvedName, "newname(2)");
 
         $source->setTestData([
+            'newname  2',
             'newname',
             'newname 1',
+            
             'randomename',
             'newname(5)',
             'test'
@@ -341,6 +343,38 @@ class NameResolverTest extends BaseTestCase
         $resolvedName = $nameResolver->resolve($newName);
 
         $this->assertEquals($resolvedName, "newname(100)(5)");
+    }
+
+    public function testResolvingNameWithSpaceAndDigits()
+    {
+        // Call Cadence Template  817
+        $newName = "newname";
+
+        $source = $this->getSequentialDataSource();
+
+        $source->setTestData([
+            'Call Cadence Template  817',
+            'newname', // newname(1)
+            'newname 1',
+            'randomename',
+            'newname(1)', // newname(2)
+            'newname(10)', // skips, aren't equal
+            'newname(2)',
+            'newname(3)',
+            'newname(4)',
+            'newname(5)',
+            'newname(6)',
+            'newname(7)',
+            'newname(8)',
+            'newname(9)',
+            'test'
+        ]);
+
+        $nameResolver = new NameResolver($source);
+
+        $resolvedName = $nameResolver->resolve($newName);
+
+        $this->assertEquals($resolvedName, "newname(11)");
     }
 
     public function testResolvingOneHundredDuplicatesWithTwoPrefixes()
